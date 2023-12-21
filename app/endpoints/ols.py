@@ -11,7 +11,7 @@ from src.query_helpers.happy_response_generator import HappyResponseGenerator
 from src.query_helpers.question_validator import QuestionValidator
 from src.query_helpers.yaml_generator import YamlGenerator
 from utils.logger import Logger
-from utils.model_context import get_watsonx_predictor
+from utils.model_context import WatsonXModelContext
 
 router = APIRouter(prefix="/ols", tags=["ols"])
 
@@ -27,6 +27,7 @@ def ols_request(llm_request: LLMRequest):
     Returns:
         dict: Response containing the processed information.
     """
+    model_context = WatsonXModelContext()
     conversation_cache = CacheFactory.conversation_cache()
     logger = Logger("ols_endpoint").logger
 
@@ -48,7 +49,7 @@ def ols_request(llm_request: LLMRequest):
     logger.info(f"{conversation} Incoming request: {llm_request.query}")
 
     # Validate the query
-    question_validator = QuestionValidator()
+    question_validator = QuestionValidator(model_context)
     validation_result = question_validator.validate_question(
         conversation, llm_request.query
     )
@@ -68,7 +69,7 @@ def ols_request(llm_request: LLMRequest):
         logger.info(f"{conversation} Question is about k8s/ocp")
 
         # Generate a user-friendly response wrapper
-        response_wrapper = HappyResponseGenerator()
+        response_wrapper = HappyResponseGenerator(model_context)
         wrapper = response_wrapper.generate(conversation, llm_request.query)
 
         if validation_result[1] == constants.NOYAML:
@@ -77,7 +78,7 @@ def ols_request(llm_request: LLMRequest):
             )
 
             # Summarize documentation
-            docs_summarizer = DocsSummarizer()
+            docs_summarizer = DocsSummarizer(model_context)
             summary, _ = docs_summarizer.summarize(conversation, llm_request.query)
 
             llm_response.response = wrapper + "\n" + summary
@@ -87,7 +88,7 @@ def ols_request(llm_request: LLMRequest):
             logger.info(
                 f"{conversation} Question is about yaml, sending to the YAML generator"
             )
-            yaml_generator = YamlGenerator()
+            yaml_generator = YamlGenerator(model_context)
             generated_yaml = yaml_generator.generate_yaml(
                 conversation, llm_request.query, previous_input
             )
@@ -145,7 +146,7 @@ def base_llm_completion(llm_request: LLMRequest):
     logger.info(f"{conversation} New conversation")
     logger.info(f"{conversation} Incoming request: {llm_request.query}")
 
-    bare_llm = get_watsonx_predictor(model=base_completion_model)
+    bare_llm = WatsonXModelContext().get_predictor(model=base_completion_model)
     response = bare_llm(llm_request.query)
 
     # TODO: Make the removal of endoftext some kind of function

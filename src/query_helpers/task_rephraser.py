@@ -6,7 +6,6 @@ from langchain.prompts import PromptTemplate
 
 from src import constants
 from utils.logger import Logger
-from utils.model_context import get_watsonx_predictor
 
 load_dotenv()
 
@@ -16,11 +15,15 @@ class TaskRephraser:
     This class is responsible for rephrasing a given task and query into a single, new task.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initializes the TaskRephraser instance.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("task_rephraser").logger
+        self._model_context = model_context
 
     def rephrase_task(self, conversation, task, original_query, **kwargs):
         """
@@ -50,7 +53,7 @@ class TaskRephraser:
         self.logger.info(f"{conversation} Rephrasing task and query")
         self.logger.info(f"{conversation} using model: {model}")
 
-        bare_llm = get_watsonx_predictor(model=model, min_new_tokens=5)
+        bare_llm = self._model_context.get_predictor(model=model, min_new_tokens=5)
         llm_chain = LLMChain(llm=bare_llm, prompt=prompt_instructions, verbose=verbose)
 
         task_query = prompt_instructions.format(task=task, query=original_query)

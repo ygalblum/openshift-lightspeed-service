@@ -6,7 +6,6 @@ from langchain.prompts import PromptTemplate
 
 from src import constants
 from utils.logger import Logger
-from utils.model_context import get_watsonx_predictor
 
 load_dotenv()
 
@@ -16,11 +15,15 @@ class HappyResponseGenerator:
     This class is responsible for generating a pleasant response to a user question.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initializes the HappyResponseGenerator instance.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("happy_response_generator").logger
+        self._model_context = model_context
 
     def generate(self, conversation, user_question, **kwargs):
         """
@@ -53,7 +56,7 @@ class HappyResponseGenerator:
 
         self.logger.info(f"{conversation} full prompt: {query}")
 
-        bare_llm = get_watsonx_predictor(model=model, temperature=2)
+        bare_llm = self._model_context.get_predictor(model=model, temperature=2)
         llm_chain = LLMChain(llm=bare_llm, prompt=prompt_instructions, verbose=verbose)
 
         response = llm_chain(inputs={"question": user_question})

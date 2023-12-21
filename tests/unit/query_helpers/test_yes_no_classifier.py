@@ -2,12 +2,13 @@ import pytest
 
 import src.query_helpers.yes_no_classifier
 from src.query_helpers.yes_no_classifier import YesNoClassifier
+from utils.model_context import WatsonXModelContext
 from tests.mock_classes.llm_chain import mock_llm_chain
 
 
 @pytest.fixture
 def yes_no_classifier():
-    return YesNoClassifier()
+    return YesNoClassifier(WatsonXModelContext())
 
 
 def test_bad_value_response(yes_no_classifier, monkeypatch):

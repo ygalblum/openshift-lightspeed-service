@@ -6,7 +6,6 @@ from langchain.prompts import PromptTemplate
 
 from src import constants
 from utils.logger import Logger
-from utils.model_context import get_watsonx_predictor
 
 load_dotenv()
 
@@ -16,11 +15,15 @@ class YamlGenerator:
     This class is responsible for generating YAML responses to user requests.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initializes the YamlGenerator instance.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("yaml_generator").logger
+        self._model_context = model_context
 
     def generate_yaml(self, conversation_id, query, history=None, **kwargs):
         """
@@ -42,7 +45,7 @@ class YamlGenerator:
         settings_string = f"conversation: {conversation_id}, query: {query}, model: {model}, verbose: {verbose}"
         self.logger.info(f"{conversation_id} call settings: {settings_string}")
         self.logger.info(f"{conversation_id} using model: {model}")
-        bare_llm = get_watsonx_predictor(model=model)
+        bare_llm = self._model_context.get_predictor(model=model)
 
         if history:
             prompt_instructions = PromptTemplate.from_template(

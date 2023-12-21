@@ -7,7 +7,6 @@ from llama_index.prompts import PromptTemplate
 
 from src import constants
 from utils.logger import Logger
-from utils.model_context import get_watsonx_context
 
 load_dotenv()
 
@@ -17,11 +16,15 @@ class DocsSummarizer:
     A class for summarizing documentation context.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initialize the DocsSummarizer.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("docs_summarizer").logger
+        self._model_context = model_context
 
     def summarize(self, conversation, query, **kwargs):
         """
@@ -55,13 +58,13 @@ class DocsSummarizer:
         tei_embedding_url = os.getenv("TEI_SERVER_URL", None)
         if tei_embedding_url:
             self.logger.info(f"{conversation} using TEI embedding server")
-            service_context = get_watsonx_context(
+            service_context = self._model_context.get_context(
                 model=model,
                 tei_embedding_model=constants.TEI_EMBEDDING_MODEL,
                 url=tei_embedding_url,
             )
         else:
-            service_context = get_watsonx_context(model=model)
+            service_context = self._model_context.get_context(model=model)
 
         self.logger.info(
             f"{conversation} using embed model: {str(service_context.embed_model)}"

@@ -9,7 +9,6 @@ from src import constants
 from src.query_helpers.task_performer import TaskPerformer
 from src.query_helpers.task_rephraser import TaskRephraser
 from utils.logger import Logger
-from utils.model_context import get_watsonx_predictor
 
 load_dotenv()
 
@@ -19,11 +18,15 @@ class TaskProcessor:
     Class responsible for processing a list of tasks based on the provided input.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initializes the TaskProcessor instance.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("task_processor").logger
+        self._model_context = model_context
 
     def process_tasks(self, conversation, tasklist, original_query, **kwargs):
         """
@@ -54,7 +57,7 @@ class TaskProcessor:
         outputs = []
 
         self.logger.info(f"{conversation} using model: {model}")
-        bare_llm = get_watsonx_predictor(model=model, min_new_tokens=5)
+        bare_llm = self._model_context.get_predictor(model=model, min_new_tokens=5)
         llm_chain = LLMChain(llm=bare_llm, prompt=prompt_instructions, verbose=verbose)
 
         for task in tasklist:
@@ -68,7 +71,7 @@ class TaskProcessor:
 
             clean_response = response["text"].split("")[0]
 
-            yes_no_classifier = YesNoClassifier()
+            yes_no_classifier = YesNoClassifier(self._model_context)
             response_status = int(
                 yes_no_classifier.classify(conversation, clean_response)
             )
@@ -84,7 +87,7 @@ class TaskProcessor:
                 )
                 return [response_status, resolution_request]
             elif response_status == 1:
-                task_rephraser = TaskRephraser()
+                task_rephraser = TaskRephraser(self._model_context)
                 rephrased_task = task_rephraser.rephrase_task(
                     conversation, clean_response, original_query
                 )

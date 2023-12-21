@@ -6,7 +6,6 @@ from langchain.prompts import PromptTemplate
 
 from src import constants
 from utils.logger import Logger
-from utils.model_context import get_watsonx_predictor
 
 load_dotenv()
 
@@ -16,11 +15,15 @@ class QuestionValidator:
     This class is responsible for validating questions and providing one-word responses.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initializes the QuestionValidator instance.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("question_validator").logger
+        self._model_context = model_context
 
     def validate_question(self, conversation, query, **kwargs):
         """
@@ -52,7 +55,7 @@ class QuestionValidator:
         self.logger.info(f"{conversation} Validating query")
         self.logger.info(f"{conversation} using model: {model}")
 
-        bare_llm = get_watsonx_predictor(
+        bare_llm = self._model_context.get_predictor(
             model=model, min_new_tokens=1, max_new_tokens=4
         )
         llm_chain = LLMChain(llm=bare_llm, prompt=prompt_instructions, verbose=verbose)

@@ -7,7 +7,6 @@ from llama_index.prompts import PromptTemplate
 
 from src import constants
 from utils.logger import Logger
-from utils.model_context import get_watsonx_context
 
 load_dotenv()
 
@@ -17,11 +16,15 @@ class TaskBreakdown:
     Class to handle task breakdowns.
     """
 
-    def __init__(self):
+    def __init__(self, model_context):
         """
         Initializes the TaskBreakdown class.
+
+        Args:
+        - model_context: Model context to use
         """
         self.logger = Logger("task_breakdown").logger
+        self._model_context = model_context
 
     def breakdown_tasks(self, conversation, query, **kwargs):
         """
@@ -53,7 +56,7 @@ class TaskBreakdown:
 
         self.logger.info(f"{conversation} Getting service context")
         self.logger.info(f"{conversation} using model: {model}")
-        service_context = get_watsonx_context(model=model)
+        service_context = self._model_context.get_context(model=model)
 
         storage_context = StorageContext.from_defaults(
             persist_dir=constants.SUMMARY_DOCS_PERSIST_DIR

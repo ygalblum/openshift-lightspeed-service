@@ -2,12 +2,13 @@ import pytest
 
 import src.query_helpers.question_validator
 from src.query_helpers.question_validator import QuestionValidator
+from utils.model_context import WatsonXModelContext
 from tests.mock_classes.llm_chain import mock_llm_chain
 
 
 @pytest.fixture
 def question_validator():
-    return QuestionValidator()
+    return QuestionValidator(WatsonXModelContext())
 
 
 def test_invalid_response(question_validator, monkeypatch):
